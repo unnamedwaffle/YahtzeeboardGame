@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yahtzee Scorecard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-white dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen">
+    <div class="container mx-auto px-4 py-6">
+        <!-- Header -->
+        <div class="text-center mb-6">
+            <h1 class="text-3xl font-bold text-primary mb-2">🎲 Yahtzee Scorecard</h1>
+            <p class="text-gray-600 dark:text-gray-400">Keep track of your Yahtzee game scores</p>
+        </div>
+
+        <!-- Player Management -->
+        <div class="mb-6 flex flex-wrap gap-2 justify-center">
+            <input type="text" id="playerName" placeholder="Player name" 
+                   class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-base">
+            <button onclick="addPlayer()" 
+                    class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90 transition-colors">
+                Add Player
+            </button>
+            <button onclick="resetGame()" 
+                    class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
+                New Game
+            </button>
+        </div>
+
+        <!-- Scorecard -->
+        <div class="overflow-x-auto">
+            <table class="w-full border-collapse border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden shadow-lg">
+                <thead>
+                    <tr class="bg-gray-100 dark:bg-gray-800">
+                        <th class="border border-gray-300 dark:border-gray-600 p-3 text-left font-semibold">Category</th>
+                        <th class="border border-gray-300 dark:border-gray-600 p-3 text-center font-semibold">How to Score</th>
+                        <div id="playerHeaders"></div>
+                    </tr>
+                </thead>
+                <tbody id="scoreTable">
+                    <!-- Upper Section -->
+                    <tr class="bg-primary bg-opacity-10">
+                        <td colspan="100" class="border border-gray-300 dark:border-gray-600 p-2 font-bold text-center">
+                            UPPER SECTION
+                        </td>
+                    </tr>
+                    <tr data-category="ones">
+                        <td class="border border-gray-300 dark:border-gray-600 p-3 font-medium">Ones</td>
+                        <td class="border border-gray-300 dark:border-gray-600 p-3 text-sm text-gray-600 dark:text-gray-400">Add only 1s</td>
+                    </tr>
+                    <tr data-category="twos">
+                        <td class="border border-gray-300 dark:border-gray-600 p-3 font-medium">Twos</td>
+                        <td class="border border-gray-300 dark:border-gray-600 p-3 text-sm text-gray-600 dark:text-gray-400">Add only 2s</td>
+                    </tr>
+                    <tr data-category="threes">
+                        <td class="border border-gray-300 dark:border-gray-600 p-3 font-medium">Threes</td>
+                        <td class="border border-gray-300 dark:border-gray-600 p-3 text-sm text-gray-600 dark:text-gray-400">Add only 3s</td>
+                    </tr>
+                    <tr data-category="fours">
+                        <td class="border border-gray-300 dark:border-gray-600 p-3 font-medium">Fours</td>
+                        <td class="border border-gray-300 dark:border-gray-600 p-3 text-sm text-gray-600 dark:text-gray-400">Add only 4s</td>
+                    </tr>
+                    <tr data-category="fives">
+                        <td class="border border-gray-300 dark:border-gray-600 p-3 font-medium">Fives</td>
+                        <td class="border border-gray-300 dark:border-gray-600 p-3 text-sm text-gray-600 dark:text-gray-400">Add only 5s</td>
+                    </tr>
+                    <tr data-category="sixes">
+                        <td class="border border-gray-300 dark:border-gray-600 p-3 font-medium">Sixes</td>
+                        <td class="border border-gray-300 dark:border-gray-600 p-3 text-sm text-gray-600 dark:text-gray-400">Add only 6s</td>
+                    </tr>
+                    <tr class="bg-yellow-50 dark:bg-yellow-900 dark:bg-opacity-20" data-category="upperSubtotal">
+                        <td class="border border-gray-300 dark:border-gray-600 p-3 font-bold">Subtotal</td>
+                        <td class="border border-gray-300 dark:border-gray-600 p-3 text-sm text-gray-600 dark:text-gray-400">→</td>
+                    </tr>
+                    <tr class="bg-yellow-50 dark:bg-yellow-900 dark:bg-opacity-20" data-category="bonus">
+                        <td class="border border-gray-300 dark:border-gray-600 p-3 font-bold">Bonus</td>
+                        <td class="border border-gray-300 dark:border-gray-600 p-3 text-sm text-gray-600 dark:text-gray-400">35 if subtotal ≥ 63</td>
+                    </tr>
+                    <tr class="bg-yellow-100 dark:bg-yellow-800 dark:bg-opacity-30" data-category="upperTotal">
+                        <td class="border border-gray-300 dark:border-gray-600 p-3 font-bold">Upper Total</td>
+                        <td class="border border-gray-300 dark:border-gray-600 p-3 text-sm text-gray-600 dark:text-gray-400">→</td>
+                    </tr>
+
+                    <!-- Lower Section -->
+                    <tr class="bg-primary bg-opacity-10">
+                        <td colspan="100" class="border border-gray-300 dark:border-gray-600 p-2 font-bold text-center">
+                            LOWER SECTION
+                        </td>
+                    </tr>
+                    <tr data-category="threeOfKind">
+                        <td class="border border-gray-300 dark:border-gray-600 p-3 font-medium">3 of a Kind</td>
+                        <td class="border border-gray-300 dark:border-gray-600 p-3 text-sm text-gray-600 dark:text-gray-400">Add all dice</td>
+                    </tr>
+                    <tr data-category="fourOfKind">
+                        <td class="border border-gray-300 dark:border-gray-600 p-3 font-medium">4 of a Kind</td>
+                        <td class="border border-gray-300 dark:border-gray-600 p-3 text-sm text-gray-600 dark:text-gray-400">Add all dice</td>
+                    </tr>
+                    <tr data-category="fullHouse">
+                        <td class="border border-gray-300 dark:border-gray-600 p-3 font-medium">Full House</td>
+                        <td class="border border-gray-300 dark:border-gray-600 p-3 text-sm text-gray-600 dark:text-gray-400">Score 25</td>
+                    </tr>
+                    <tr data-category="smallStraight">
+                        <td class="border border-gray-300 dark:border-gray-600 p-3 font-medium">Small Straight</td>
+                        <td class="border border-gray-300 dark:border-gray-600 p-3 text-sm text-gray-600 dark:text-gray-400">Score 30</td>
+                    </tr>
+                    <tr data-category="largeStraight">
+                        <td class="border border-gray-300 dark:border-gray-600 p-3 font-medium">Large Straight</td>
+                        <td class="border border-gray-300 dark:border-gray-600 p-3 text-sm text-gray-600 dark:text-gray-400">Score 40</td>
+                    </tr>
+                    <tr data-category="yahtzee">
+                        <td class="border border-gray-300 dark:border-gray-600 p-3 font-medium">Yahtzee</td>
+                        <td class="border border-gray-300 dark:border-gray-600 p-3 text-sm text-gray-600 dark:text-gray-400">Score 50</td>
+                    </tr>
+                    <tr data-category="chance">
+                        <td class="border border-gray-300 dark:border-gray-600 p-3 font-medium">Chance</td>
+                        <td class="border border-gray-300 dark:border-gray-600 p-3 text-sm text-gray-600 dark:text-gray-400">Add all dice</td>
+                    </tr>
+                    <tr class="bg-green-100 dark:bg-green-800 dark:bg-opacity-30" data-category="lowerTotal">
+                        <td class="border border-gray-300 dark:border-gray-600 p-3 font-bold">Lower Total</td>
+                        <td class="border border-gray-300 dark:border-gray-600 p-3 text-sm text-gray-600 dark:text-gray-400">→</td>
+                    </tr>
+                    <tr class="bg-primary bg-opacity-20" data-category="grandTotal">
+                        <td class="border border-gray-300 dark:border-gray-600 p-3 font-bold text-lg">GRAND TOTAL</td>
+                        <td class="border border-gray-300 dark:border-gray-600 p-3 text-sm text-gray-600 dark:text-gray-400">→</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Game Status -->
+        <div id="gameStatus" class="mt-6 text-center text-gray-600 dark:text-gray-400"></div>
+    </div>
+
+    <script>
+        // Dark mode detection
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+
+        let players = [];
+        let scores = {};
+
+        function addPlayer() {
+            const nameInput = document.getElementById('playerName');
+            const name = nameInput.value.trim();
+            
+            if (!name) {
+                showMessage('Please enter a player name');
+                return;
+            }
+            
+            if (players.includes(name)) {
+                showMessage('Player already exists');
+                return;
+            }
+            
+            if (players.length >= 6) {
+                showMessage('Maximum 6 players allowed');
+                return;
+            }
+            
+            players.push(name);
+            scores[name] = {};
+            nameInput.value = '';
+            updateScorecard();
+            updateGameStatus();
+        }
+
+        function removePlayer(playerName) {
+            players = players.filter(p => p !== playerName);
+            delete scores[playerName];
+            updateScorecard();
+            updateGameStatus();
+        }
+
+        function updateScorecard() {
+            const headerRow = document.querySelector('thead tr');
+            const playerHeadersContainer = document.getElementById('playerHeaders');
+            
+            // Clear existing player headers
+            const existingHeaders = headerRow.querySelectorAll('.player-header');
+            existingHeaders.forEach(header => header.remove());
+            
+            // Add player headers
+            players.forEach(player => {
+                const th = document.createElement('th');
+                th.className = 'player-header border border-gray-300 dark:border-gray-600 p-3 text-center font-semibold min-w-24';
+                th.innerHTML = `
+                    <div class="flex flex-col items-center gap-1">
+                        <span>${player}</span>
+                        <button onclick="removePlayer('${player}')" 
+                                class="text-xs text-red-500 hover:text-red-700 dark:hover:text-red-400">
+                            ×
+                        </button>
+                    </div>
+                `;
+                headerRow.appendChild(th);
+            });
+
+            // Update score rows
+            const rows = document.querySelectorAll('[data-category]');
+            rows.forEach(row => {
+                const category = row.dataset.category;
+                
+                // Clear existing player cells
+                const existingCells = row.querySelectorAll('.player-cell');
+                existingCells.forEach(cell => cell.remove());
+                
+                // Add player cells
+                players.forEach(player => {
+                    const td = document.createElement('td');
+                    td.className = 'player-cell border border-gray-300 dark:border-gray-600 p-2 text-center';
+                    
+                    if (['upperSubtotal', 'bonus', 'upperTotal', 'lowerTotal', 'grandTotal'].includes(category)) {
+                        // Calculated fields
+                        td.className += ' bg-gray-50 dark:bg-gray-800 font-bold';
+                        td.textContent = calculateScore(player, category);
+                    } else {
+                        // Input fields
+                        td.innerHTML = `
+                            <input type="number" 
+                                   value="${scores[player][category] || ''}"
+                                   onchange="updateScore('${player}', '${category}', this.value)"
+                                   class="w-full text-center border-0 bg-transparent text-base focus:outline-none focus:ring-2 focus:ring-primary rounded px-1 py-1"
+                                   min="0" max="150">
+                        `;
+                    }
+                    row.appendChild(td);
+                });
+            });
+        }
+
+        function updateScore(player, category, value) {
+            scores[player][category] = value === '' ? null : parseInt(value) || 0;
+            updateCalculatedScores();
+            updateGameStatus();
+        }
+
+        function calculateScore(player, category) {
+            const playerScores = scores[player] || {};
+            
+            switch(category) {
+                case 'upperSubtotal':
+                    const upperCategories = ['ones', 'twos', 'threes', 'fours', 'fives', 'sixes'];
+                    return upperCategories.reduce((sum, cat) => sum + (playerScores[cat] || 0), 0);
+                
+                case 'bonus':
+                    const subtotal = calculateScore(player, 'upperSubtotal');
+                    return subtotal >= 63 ? 35 : 0;
+                
+                case 'upperTotal':
+                    return calculateScore(player, 'upperSubtotal') + calculateScore(player, 'bonus');
+                
+                case 'lowerTotal':
+                    const lowerCategories = ['threeOfKind', 'fourOfKind', 'fullHouse', 'smallStraight', 'largeStraight', 'yahtzee', 'chance'];
+                    return lowerCategories.reduce((sum, cat) => sum + (playerScores[cat] || 0), 0);
+                
+                case 'grandTotal':
+                    return calculateScore(player, 'upperTotal') + calculateScore(player, 'lowerTotal');
+                
+                default:
+                    return playerScores[category] || 0;
+            }
+        }
+
+        function updateCalculatedScores() {
+            const calculatedCategories = ['upperSubtotal', 'bonus', 'upperTotal', 'lowerTotal', 'grandTotal'];
+            
+            players.forEach(player => {
+                calculatedCategories.forEach(category => {
+                    const row = document.querySelector(`[data-category="${category}"]`);
+                    const playerIndex = players.indexOf(player);
+                    const cell = row.querySelectorAll('.player-cell')[playerIndex];
+                    if (cell) {
+                        cell.textContent = calculateScore(player, category);
+                    }
+                });
+            });
+        }
+
+        function updateGameStatus() {
+            const statusDiv = document.getElementById('gameStatus');
+            
+            if (players.length === 0) {
+                statusDiv.textContent = 'Add players to start your Yahtzee game!';
+                return;
+            }
+            
+            const leader = players.reduce((leader, player) => {
+                const leaderScore = calculateScore(leader, 'grandTotal');
+                const playerScore = calculateScore(player, 'grandTotal');
+                return playerScore > leaderScore ? player : leader;
+            }, players[0]);
+            
+            const leaderScore = calculateScore(leader, 'grandTotal');
+            statusDiv.textContent = `Current leader: ${leader} with ${leaderScore} points`;
+        }
+
+        function resetGame() {
+            showConfirmDialog('Are you sure you want to start a new game? All scores will be lost.', () => {
+                players = [];
+                scores = {};
+                updateScorecard();
+                updateGameStatus();
+                showMessage('New game started!');
+            });
+        }
+
+        function showMessage(message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'fixed top-4 right-4 bg-primary text-white px-4 py-2 rounded-lg shadow-lg z-50';
+            messageDiv.textContent = message;
+            document.body.appendChild(messageDiv);
+            
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 3000);
+        }
+
+        function showConfirmDialog(message, onConfirm) {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4';
+            modal.innerHTML = `
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-sm w-full">
+                    <p class="text-gray-700 dark:text-gray-300 mb-4">${message}</p>
+                    <div class="flex justify-end space-x-3">
+                        <button class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded" onclick="this.closest('.fixed').remove()">Cancel</button>
+                        <button class="px-4 py-2 bg-red-500 text-white hover:bg-red-600 rounded" onclick="this.closest('.fixed').remove(); (${onConfirm})()">Confirm</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        // Initialize
+        updateGameStatus();
+    </script>
+</body>
+</html>
